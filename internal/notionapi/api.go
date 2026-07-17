@@ -99,7 +99,7 @@ func (c Client) Sync(ctx context.Context, st *store.Store) (Summary, error) {
 			return err
 		}
 		for _, page := range pages {
-			count, comments, warnings, err := c.ingestPage(ctx, st, page, ingestPageOptions{FetchBlocks: true, FetchComments: true})
+			count, comments, warnings, err := c.ingestPage(ctx, st, page, ingestPageOptions{FetchBlocks: true, FetchComments: false})
 			if err != nil {
 				return err
 			}

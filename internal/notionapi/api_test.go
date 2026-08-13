@@ -862,6 +862,54 @@ func TestDoRetriesTransportErrorWhileReadingResponse(t *testing.T) {
 	}
 }
 
+func TestDoRetriesClientDeadlineExceededForReplaySafeRequest(t *testing.T) {
+	attempts := 0
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		attempts++
+		if attempts == 1 {
+			return nil, context.DeadlineExceeded
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"object":"list","results":[],"has_more":false}`)),
+			Request:    req,
+		}, nil
+	})}
+
+	var out map[string]any
+	err := (Client{BaseURL: "https://api.notion.com/v1", Version: "2022-06-28", Token: "secret", HTTP: client}).do(context.Background(), http.MethodGet, "/blocks/page1/children?page_size=100", nil, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 2 {
+		t.Fatalf("expected 2 attempts, got %d", attempts)
+	}
+	if out["object"] != "list" {
+		t.Fatalf("unexpected response: %+v", out)
+	}
+}
+
+func TestDoDoesNotRetryWhenCallerContextIsDone(t *testing.T) {
+	attempts := 0
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		attempts++
+		return nil, context.DeadlineExceeded
+	})}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	var out map[string]any
+	err := (Client{BaseURL: "https://api.notion.com/v1", Version: "2022-06-28", Token: "secret", HTTP: client}).do(ctx, http.MethodGet, "/blocks/page1/children?page_size=100", nil, &out)
+	if err == nil {
+		t.Fatal("expected context error")
+	}
+	if attempts != 1 {
+		t.Fatalf("expected one attempt for canceled context, got %d", attempts)
+	}
+}
+
 func TestDoRetriesTransportErrorForReadOnlyPost(t *testing.T) {
 	for _, path := range []string{"/search", "/databases/db1/query", "/data_sources/ds1/query"} {
 		t.Run(path, func(t *testing.T) {

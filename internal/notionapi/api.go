@@ -682,8 +682,7 @@ func shouldRetryTransportError(ctx context.Context, method, path string, err err
 		return false
 	}
 	return isReplaySafeRequest(method, path) &&
-		!errors.Is(err, context.Canceled) &&
-		!errors.Is(err, context.DeadlineExceeded)
+		!errors.Is(err, context.Canceled)
 }
 
 func isReplaySafeRequest(method, path string) bool {

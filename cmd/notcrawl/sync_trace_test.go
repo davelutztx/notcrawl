@@ -44,8 +44,8 @@ func TestSyncVerboseAPITraceAndRedaction(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, `{"code":"validation_error","message":%q}`, private+" not supported via the API")
 		case "/comments":
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, `{"code":"restricted_resource","message":%q}`, private)
+			t.Error("local no-comments build unexpectedly requested comments")
+			w.WriteHeader(http.StatusInternalServerError)
 		default:
 			http.Error(w, private, http.StatusNotFound)
 		}
@@ -66,7 +66,7 @@ func TestSyncVerboseAPITraceAndRedaction(t *testing.T) {
 		t.Fatalf("verbose changed stdout: %q != %q", verboseOut.String(), normalOut.String())
 	}
 	logs := verboseErr.String()
-	for _, want := range []string{`msg="sync trace"`, `phase=api`, `phase=users`, `phase=pages`, `phase=collections`, `state=started`, `state=finished`, `elapsed=`, `attempt=1`, `attempt=2`, `state=retry`, `status=429`, `status=200`, `status=403`, `retry_after=1ms`, `users=1`, `pages=1`, `blocks=1`, `warnings=1`} {
+	for _, want := range []string{`msg="sync trace"`, `phase=api`, `phase=users`, `phase=pages`, `phase=collections`, `state=started`, `state=finished`, `elapsed=`, `attempt=1`, `attempt=2`, `state=retry`, `status=429`, `status=200`, `status=400`, `retry_after=1ms`, `users=1`, `pages=1`, `blocks=1`, `comments=0`, `warnings=1`} {
 		if !strings.Contains(logs, want) {
 			t.Errorf("missing %q in trace:\n%s", want, logs)
 		}

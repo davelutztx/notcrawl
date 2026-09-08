@@ -111,6 +111,33 @@ Git share mode publishes compressed JSONL table snapshots and normalized Markdow
 `publish --tag NAME` creates an immutable checkpoint. `subscribe` and `update` merge snapshots without deleting local-only rows by default; `--restore` requests exact replacement, and `--retain-revisions` saves replaced local payloads.
 
 Secrets are not included in Markdown or git share snapshots.
+Structured signed-file URL credentials are removed from these outgoing
+projections; ordinary link parameters and private local raw recovery payloads
+are retained.
+
+### Troubleshooting export failures
+
+`export-md` and `publish` stop with an error if protected provider JSON is
+malformed or a signed file URL cannot be safely sanitized. They do not skip
+the record or remove its raw payload from the local archive.
+
+Before investigating, stop archive writers and make a consistent, private
+SQLite backup, including any uncheckpointed WAL data. Keep the original
+archive and backup unchanged. Use read-only queries on the backup to inspect
+JSON validity and record counts; do not print or share raw payloads, signed
+URLs, or credentials in diagnostics or issue reports.
+
+If the source is still available, use a separate configuration with new
+`db_path`, `cache_dir`, `markdown_dir`, and `[share].repo_path` locations to
+reimport it. Select the intended source explicitly. Desktop cache coverage is
+limited, and a normal resync is not guaranteed to repair historical records.
+Preserve the original archive for records the source can no longer supply.
+
+A failed export can leave partial or stale files in the Markdown or share
+directory; output changes are not rolled back atomically. Do not manually
+commit, push, or distribute that output. Retry into separate output locations
+after resolving the source problem, and require a successful export before
+using the result.
 
 ## Configuration
 

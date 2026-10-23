@@ -21,6 +21,8 @@ type Client struct {
 	Token   string
 	HTTP    *http.Client
 	Trace   *slog.Logger
+	// SkipComments keeps local workspace sync read traffic scoped to pages and blocks.
+	SkipComments bool
 }
 
 type Summary struct {
@@ -74,7 +76,7 @@ func (c Client) Sync(ctx context.Context, st *store.Store) (Summary, error) {
 		return s, err
 	}
 	for _, page := range pages {
-		count, comments, warnings, err := c.ingestPage(ctx, st, page, ingestPageOptions{FetchBlocks: true, FetchComments: true})
+		count, comments, warnings, err := c.ingestPage(ctx, st, page, ingestPageOptions{FetchBlocks: true, FetchComments: !c.SkipComments})
 		if err != nil {
 			return s, err
 		}

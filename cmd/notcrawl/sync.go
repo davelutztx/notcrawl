@@ -87,10 +87,11 @@ func runSync(ctx context.Context, stdout, stderr io.Writer, cfg config.Config, a
 		case "api":
 			trace.start("api")
 			s, err := notionapi.Client{
-				BaseURL: cfg.Notion.API.BaseURL,
-				Version: cfg.Notion.API.Version,
-				Token:   cfg.APIToken(),
-				Trace:   trace.apiLogger(),
+				BaseURL:      cfg.Notion.API.BaseURL,
+				Version:      cfg.Notion.API.Version,
+				Token:        cfg.APIToken(),
+				Trace:        trace.apiLogger(),
+				SkipComments: true,
 			}.Sync(ctx, st)
 			if err != nil {
 				return err
